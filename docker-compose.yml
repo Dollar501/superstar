@@ -1,0 +1,55 @@
+version: '3.11'
+
+services:
+  superstar-bot:
+    build: .
+    container_name: superstar-telegram-bot
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${8287269386:AAFvp9sZEmN55hflKNDBpkTqDEw7w7QggDU}
+      - DB_HOST=${sql111.infinityfree.com}
+      - DB_USER=${if0_38518723}
+      - DB_PASSWORD=${HT3UaczTwivWWHI}
+      - DB_NAME=${if0_38518723_ssdb}
+      - WEB_APP_URL=${http://superstar.ct.ws}
+      - SECRET_KEY=${SECRET_KEY}
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - superstar-network
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('https://api.telegram.org/bot${BOT_TOKEN}/getMe')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Local MySQL database (if not using external hosting)
+  db:
+    image: mysql:8.0
+    container_name: superstar-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - superstar-network
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+networks:
+  superstar-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
